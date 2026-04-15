@@ -1,0 +1,10 @@
+---
+title: Starter Post 02
+excerpt: ...
+pubDate: 2026-04-08
+category: Machine Learning
+tag: ...
+featured: true
+draft: false
+---
+
