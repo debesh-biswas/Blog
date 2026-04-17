@@ -133,9 +133,9 @@ const description = 'About Debesh Blog and the ideas behind the site.';
 				<div class="topbar-block">Debesh Biswas - The <em>B</em>log</div>
 				<div class="topbar-block topbar-middle">Artificial Intelligence / Machine Learning</div>
 				<nav class="topbar-block topbar-nav" aria-label="Primary">
-					  <a href="/">Console</a>
-					<a href="/blog/">Disk</a>
-					<a href="/about">Root</a>
+          		<a href={`${import.meta.env.BASE_URL}`}>Console</a>
+          		<a href={`${import.meta.env.BASE_URL}blog/`}>Disk</a>
+          		<a href={`${import.meta.env.BASE_URL}about/`}>Root</a>
 					<button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
 						<svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
 							<path d="M21 13.2A9 9 0 1 1 10.8 3a7 7 0 0 0 10.2 10.2z"></path>
