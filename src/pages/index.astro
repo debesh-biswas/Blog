@@ -25,7 +25,7 @@ const toCard = (post: CollectionEntry<'blog'>) => ({
   heading: post.data.title,
   summary: post.data.excerpt || '',
   time: post.data.pubDate ? formatDate(post.data.pubDate) : '',
-  href: `/blog/${getPostSlug(post)}/`
+  href: `${import.meta.env.BASE_URL}blog/${getPostSlug(post)}/`
 });
 
 let featuredPosts = allPosts
