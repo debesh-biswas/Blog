@@ -16,9 +16,17 @@ const formatDate = (date: Date) =>
   }).format(date);
 
 const getPostSlug = (post: (typeof posts)[number]) =>
-  post.slug ?? post.id.replace(/\.(md|mdx)$/i, '').replace(/\/index$/i, '');
----
+  post.slug ?? post.id.replace(/\.mdx$/i, '').replace(/\/index$/i, '');
+const postsByCategory = posts.reduce((acc, p) => {
+  const cat = (p.data.category ?? 'Uncategorized');
+  if (!acc[cat]) acc[cat] = [];
+  acc[cat].push(p);
+  return acc;
+}, {} as Record<string, Array<(typeof posts)[number]>>);
 
+const categories = Object.keys(postsByCategory).sort((a, b) => a.localeCompare(b));
+
+---
 <!doctype html>
 <html lang="en">
   <head>
@@ -33,6 +41,11 @@ const getPostSlug = (post: (typeof posts)[number]) =>
       href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+    <script is:inline>
+      const storedTheme = localStorage.getItem('debesh-blog-theme');
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = storedTheme ?? (systemPrefersDark ? 'dark' : 'light');
+    </script>
     <title>{title} | Debesh Blog</title>
     <style>
       :root {
@@ -65,6 +78,15 @@ const getPostSlug = (post: (typeof posts)[number]) =>
       * { box-sizing: border-box; }
       html, body { margin: 0; min-height: 100%; }
 
+      /* Hide native scrollbars but keep scrolling behavior */
+      html {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE 10+ */
+        scroll-behavior: smooth;
+      }
+      html::-webkit-scrollbar { width: 0; height: 0; }
+      body::-webkit-scrollbar { width: 0; height: 0; }
+
       body {
         font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
         background: var(--bg);
@@ -80,7 +102,7 @@ const getPostSlug = (post: (typeof posts)[number]) =>
 
       a { color: inherit; text-decoration: none; }
 
-      .topbar {
+       .topbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -90,20 +112,14 @@ const getPostSlug = (post: (typeof posts)[number]) =>
         margin-bottom: 18px;
       }
 
-      /* Explicit shared topbar typography to match homepage */
-      .topbar,
-      .topbar-block,
-      .topbar-nav,
-      .topbar-nav a {
+      .topbar-block {
         font-family: 'IBM Plex Mono', monospace;
         font-size: 0.72rem;
         letter-spacing: 0.2em;
-        line-height: 1;
         text-transform: uppercase;
         font-weight: 600;
+        white-space: nowrap;
       }
-
-      .nav { display: flex; gap: 14px; }
 
       .topbar-middle {
         text-align: center;
@@ -132,16 +148,66 @@ const getPostSlug = (post: (typeof posts)[number]) =>
         cursor: pointer;
       }
 
-      .theme-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-      .theme-toggle .icon-sun { display: none; }
-      html[data-theme='dark'] .theme-toggle .icon-sun { display: block; }
-      html[data-theme='dark'] .theme-toggle .icon-moon { display: none; }
+      .theme-toggle svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+      }
+
+      .theme-toggle .icon-sun {
+        display: none;
+      }
+
+      html[data-theme='dark'] .theme-toggle .icon-sun {
+        display: block;
+      }
+
+      html[data-theme='dark'] .theme-toggle .icon-moon {
+        display: none;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.03fr 1.34fr;
+        gap: 24px;
+        align-items: stretch;
+        padding: 10px 0 14px;
+      }
+
+      .hero-left {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
 
       h1 {
-        margin: 0 0 12px;
-        font-size: clamp(2.2rem, 5vw, 3.8rem);
+        margin: 0 0 15px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
         line-height: 0.95;
         letter-spacing: -0.04em;
+      }
+
+      .hero-copy {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 1.45rem;
+        line-height: 1.16;
+        letter-spacing: 0.02em;
+        color: var(--ink-soft);
+        max-width: 34ch;
       }
 
       .lead {
@@ -154,6 +220,62 @@ const getPostSlug = (post: (typeof posts)[number]) =>
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px;
+      }
+
+      .post-list {
+        list-style: none;
+        margin: 0 0 20px 0;
+        padding: 0;
+      }
+
+      .post-list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 0;
+      }
+
+      .post-list li .post-link {
+        flex: 1 1 auto;
+        font-weight: 400;
+        color: inherit;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        transition: color 140ms ease, font-weight 120ms ease, transform 120ms ease;
+      }
+
+      /* Hover and keyboard focus: emphasize the title */
+      .post-list li:hover .post-link,
+      .post-list li .post-link:focus,
+      .post-list li .post-link:focus-visible {
+        font-weight: 600;
+        transform: translateY(-1px);
+        color: inherit;
+      }
+
+      .post-list li .post-date {
+        flex: 0 0 auto;
+        margin-left: 24px;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.82rem;
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+
+      .section-label {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 1.2rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin: 8px 0 6px;
+      }
+
+      .category {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0;
+        margin-bottom: 6px;
       }
 
       .card {
@@ -193,6 +315,29 @@ const getPostSlug = (post: (typeof posts)[number]) =>
       @media (max-width: 760px) {
         .grid { grid-template-columns: 1fr; }
       }
+      @media (max-width: 1140px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 740px) {
+        main {
+          padding-inline: 14px;
+        }
+        .topbar {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+        .topbar-middle {
+          order: 3;
+          width: 100%;
+                }
+        .theme-toggle {
+          width: 40px;
+          height: 40px;
+          justify-content: center;
+        }
+      }
     </style>
   </head>
   <body>
@@ -201,8 +346,9 @@ const getPostSlug = (post: (typeof posts)[number]) =>
         <div class="topbar-block">Debesh Biswas - The <em>B</em>log</div>
         <div class="topbar-block topbar-middle">Artificial Intelligence / Machine Learning</div>
         <nav class="topbar-block topbar-nav" aria-label="Primary">
-          <a href="/">Home</a>
-          <a href="/about">About</a>
+          <a href="/home/">Console</a>
+          <a href="/blog/">Disk</a>
+          <a href="/about">Root</a>
           <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
             <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M21 13.2A9 9 0 1 1 10.8 3a7 7 0 0 0 10.2 10.2z"></path>
@@ -216,29 +362,60 @@ const getPostSlug = (post: (typeof posts)[number]) =>
         </nav>
       </header>
     <script is:inline>
-      const themeToggle = document.getElementById('themeToggle');
-      const storedTheme = localStorage.getItem('debesh-blog-theme');
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.dataset.theme = storedTheme ?? (systemPrefersDark ? 'dark' : 'light');
-      const updateThemeToggleLabel = (activeTheme) => {
-        if (!(themeToggle instanceof HTMLButtonElement)) return;
-        themeToggle.setAttribute(
-          'aria-label',
-          activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-        );
-      };
-      themeToggle?.addEventListener('click', () => {
-        const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-        document.documentElement.dataset.theme = nextTheme;
-        localStorage.setItem('debesh-blog-theme', nextTheme);
-        updateThemeToggleLabel(nextTheme);
-      });
-      updateThemeToggleLabel(document.documentElement.dataset.theme ?? 'light');
+      (function () {
+        const ensureSetup = () => {
+          const themeToggle = document.getElementById('themeToggle');
+
+          const updateThemeToggleLabel = (activeTheme) => {
+            if (!(themeToggle instanceof HTMLButtonElement)) return;
+            themeToggle.setAttribute(
+              'aria-label',
+              activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+            );
+          };
+
+          themeToggle?.addEventListener('click', () => {
+            const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+            document.documentElement.dataset.theme = nextTheme;
+            localStorage.setItem('debesh-blog-theme', nextTheme);
+            updateThemeToggleLabel(nextTheme);
+          });
+
+          updateThemeToggleLabel(document.documentElement.dataset.theme ?? 'light');
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', ensureSetup);
+        } else {
+          ensureSetup();
+        }
+      })();
     </script>
 
-      <section>
-        <h1>Blog</h1>
-        <p class="lead">Welcome to the blog. Please use the homepage to browse posts.</p>
+      <section aria-label="Blog listing">
+        <h1>Disk</h1>
+        <p class="lead">Browse posts grouped by category below.</p>
+
+        {categories.length === 0 ? (
+          <p>No posts available.</p>
+        ) : (
+          categories.map((cat) => (
+            <section class="category" aria-label={"Category: " + cat}>
+              <h2 class="section-label">{cat}</h2>
+              <ul class="post-list">
+                {postsByCategory[cat]
+                  .slice()
+                  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+                  .map((post) => (
+                    <li>
+                      <a class="post-link" href={`/blog/${getPostSlug(post)}/`}>{post.data.title}</a>
+                      <span class="post-date">{post.data.pubDate ? formatDate(post.data.pubDate) : ''}</span>
+                    </li>
+                  ))}
+              </ul>
+            </section>
+          ))
+        )}
       </section>
     </main>
   </body>

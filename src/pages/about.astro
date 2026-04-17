@@ -17,6 +17,11 @@ const description = 'About Debesh Blog and the ideas behind the site.';
 			href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;700&display=swap"
 			rel="stylesheet"
 		/>
+		<script is:inline>
+		  const storedTheme = localStorage.getItem('debesh-blog-theme');
+		  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		  document.documentElement.dataset.theme = storedTheme ?? (systemPrefersDark ? 'dark' : 'light');
+		</script>
 		<title>{title} | Debesh Blog</title>
 		<style>
 			:root {
@@ -49,6 +54,13 @@ const description = 'About Debesh Blog and the ideas behind the site.';
 			main { max-width: 1320px; margin: 0 auto; padding: 18px 28px 30px; }
 
 			a { color: inherit; text-decoration: none; }
+			
+			h1 {
+				margin: 0 0 15px;
+				font-size: clamp(2.2rem, 4vw, 3.8rem);
+				line-height: 0.95;
+				letter-spacing: -0.04em;
+			}
 
 			.topbar {
 				display: flex;
@@ -100,49 +112,91 @@ const description = 'About Debesh Blog and the ideas behind the site.';
 			html[data-theme='dark'] .theme-toggle .icon-sun { display: block; }
 			html[data-theme='dark'] .theme-toggle .icon-moon { display: none; }
 
-			.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
-			.card p { color: var(--ink-soft); }
+			.visually-hidden {
+				position: absolute;
+				width: 1px;
+				height: 1px;
+				padding: 0;
+				margin: -1px;
+				overflow: hidden;
+				clip: rect(0, 0, 0, 0);
+				white-space: nowrap;
+				border: 0;
+			}
+
+
 		</style>
 	</head>
 	<body>
 		<main>
-				<header class="topbar" aria-label="Site top bar">
-					<div class="topbar-block">Debesh Biswas - The <em>B</em>log</div>
-					<div class="topbar-block topbar-middle">Artificial Intelligence / Machine Learning</div>
-					<nav class="topbar-block topbar-nav" aria-label="Primary">
-						<a href="/">Home</a>
-						<a href="/about">About</a>
-						<button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
-							<svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 13.2A9 9 0 1 1 10.8 3a7 7 0 0 0 10.2 10.2z"></path></svg>
-							<svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg>
-							<span class="visually-hidden">Toggle color theme</span>
-						</button>
-					</nav>
-				</header>
-			<section class="card">
-				<h1>About</h1>
-				<p>
-					This blog is being shaped as a warm, minimal space for AI, ML, and technical notes.
-					The next step is a clean content system with Markdown posts, tags, and search.
-				</p>
-			</section>
+			<header class="topbar" aria-label="Site top bar">
+				<div class="topbar-block">Debesh Biswas - The <em>B</em>log</div>
+				<div class="topbar-block topbar-middle">Artificial Intelligence / Machine Learning</div>
+				<nav class="topbar-block topbar-nav" aria-label="Primary">
+					<a href="/home/">Console</a>
+					<a href="/blog/">Disk</a>
+					<a href="/about">Root</a>
+					<button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
+						<svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M21 13.2A9 9 0 1 1 10.8 3a7 7 0 0 0 10.2 10.2z"></path>
+						</svg>
+						<svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+							<circle cx="12" cy="12" r="4"></circle>
+							<path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path>
+						</svg>
+						<span class="visually-hidden">Toggle color theme</span>
+					</button>
+				</nav>
+      		</header>
 			<script is:inline>
+			(function () {
+				const ensureSetup = () => {
 				const themeToggle = document.getElementById('themeToggle');
-				const storedTheme = localStorage.getItem('debesh-blog-theme');
-				const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-				document.documentElement.dataset.theme = storedTheme ?? (systemPrefersDark ? 'dark' : 'light');
+
 				const updateThemeToggleLabel = (activeTheme) => {
 					if (!(themeToggle instanceof HTMLButtonElement)) return;
-					themeToggle.setAttribute('aria-label', activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+					themeToggle.setAttribute(
+					'aria-label',
+					activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+					);
 				};
+
 				themeToggle?.addEventListener('click', () => {
 					const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
 					document.documentElement.dataset.theme = nextTheme;
 					localStorage.setItem('debesh-blog-theme', nextTheme);
 					updateThemeToggleLabel(nextTheme);
 				});
+
 				updateThemeToggleLabel(document.documentElement.dataset.theme ?? 'light');
+				};
+
+				if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', ensureSetup);
+				} else {
+				ensureSetup();
+				}
+			})();
 			</script>
+			<section>
+				<h1>Root</h1>
+				<p>
+					I'm a computer science grad from VIT now pursuing a Master's in Artificial Intelligence at Boston University, 
+					and honestly, this field never stops surprising me, which is exactly why I'm hooked.
+				</p>
+				<p>	
+					My interests live at the intersection of language, intelligence, and systems. I'm fascinated by how machines learn to understand context, 
+					reason through ambiguity, and even generate creative output. 
+					Large language models, multimodal AI, and agentic systems that can autonomously break down problems and act on them,
+					these are the spaces where I think the most interesting problems live.
+				</p>
+				<p>	
+					When I'm not deep in research or building, I'm tinkering with electronics, something I've picked up recently, catching up on papers, 
+					or having a genuinely interesting conversation about something I don't fully understand yet. 
+					I'm always open to internships and love chatting about AI, ideas, or anything in between.
+				</p>
+			</section>
+			
 
 		</main>
 	</body>

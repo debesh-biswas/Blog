@@ -1,0 +1,771 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+
+const siteTitle = "Debesh's Blog";
+const siteDescription =
+  'A personal blog born from an obsession with documentation and a deep interest in machine learning.';
+
+const allPosts = (await getCollection('blog'))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(date);
+
+const getPostSlug = (post: CollectionEntry<'blog'>) =>
+  post.slug ?? post.id.replace(/\.mdx$/i, '').replace(/\/index$/i, '');
+
+const toCard = (post: CollectionEntry<'blog'>) => ({
+  title: post.data.title,
+  tag: post.data.tag || '',
+  heading: post.data.title,
+  summary: post.data.excerpt || '',
+  time: post.data.pubDate ? formatDate(post.data.pubDate) : '',
+  href: `/blog/${getPostSlug(post)}/`
+});
+
+let featuredPosts = allPosts
+  .filter((post) => post.data.featured)
+  .slice(0, 4)
+  .map(toCard);
+
+// Build a set of featured slugs for exclusion
+const featuredSlugs = new Set(
+  allPosts.filter((p) => p.data.featured).map((p) => getPostSlug(p))
+);
+
+// Prefer recent posts that are not featured
+let recentPosts = allPosts
+  .filter((post) => !featuredSlugs.has(getPostSlug(post)))
+  .slice(0, 4)
+  .map(toCard);
+
+// If we don't have enough non-featured posts, fill remaining slots from allPosts (avoiding duplicates)
+if (recentPosts.length < 4) {
+  const recentSlugs = new Set(recentPosts.map((r) => r.href));
+  for (const p of allPosts) {
+    if (recentPosts.length >= 4) break;
+    const href = `/blog/${getPostSlug(p)}/`;
+    if (recentSlugs.has(href)) continue;
+    recentPosts.push(toCard(p));
+    recentSlugs.add(href);
+  }
+}
+
+// If no featured posts exist, fall back to the most recent posts for featured
+if (featuredPosts.length === 0) {
+  featuredPosts = allPosts.slice(0, 4).map(toCard);
+}
+
+const countdownTarget = '2042-01-01T00:00:00Z';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={siteDescription} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>
+      const storedTheme = localStorage.getItem('debesh-blog-theme');
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = storedTheme ?? (systemPrefersDark ? 'dark' : 'light');
+    </script>
+    <title>{siteTitle}</title>
+    <style>
+      :root {
+        --bg: #f0ede8;
+        --surface: #e5e7ea;
+        --ink: #151112;
+        --ink-soft: #383336;
+        --line: #a7a2a5;
+        --card-top: linear-gradient(180deg, #2d2a2c 0%, #161417 100%);
+        --card-top-ink: #f2f2f2;
+        --input-bg: #e5e7ea;
+        --send-bg: #130f11;
+        --send-ink: #f6f4f2;
+        --shadow-elev-1: 0 8px 22px -14px rgba(0, 0, 0, 0.8);
+        --shadow-glow: 0 4px 12px -10px rgba(255, 255, 255, 0.18);
+      }
+
+      html[data-theme='dark'] {
+        color-scheme: dark;
+        --bg: #0d0d11;
+        --surface: #1a1c1e;
+        --ink: #f2f0ee;
+        --ink-soft: #d0ccd1;
+        --line: #565259;
+        --card-top: linear-gradient(180deg, #f0f0f0 0%, #d8dbe0 100%);
+        --card-top-ink: #191519;
+        --input-bg: #11131a;
+        --send-bg: #f0efec;
+        --send-ink: #171317;
+        --shadow-elev-1: 0 10px 28px -14px rgba(0, 0, 0, 0.75);
+        --shadow-glow: 0 10px 20px -10px rgba(255, 255, 255, 0.75);
+      }
+
+      html[data-theme='light'] {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      /* Hide native scrollbars but keep scrolling behavior */
+      html {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE 10+ */
+        scroll-behavior: smooth;
+      }
+      html::-webkit-scrollbar { width: 0; height: 0; }
+      body::-webkit-scrollbar { width: 0; height: 0; }
+
+      body {
+        font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        line-height: 1.3;
+      }
+
+      main {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 18px 28px 30px;
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        margin-bottom: 18px;
+      }
+
+      .topbar-block {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .topbar-middle {
+        text-align: center;
+        flex: 1;
+      }
+
+      .topbar-nav {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .theme-toggle {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--ink);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        cursor: pointer;
+      }
+
+      .theme-toggle svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+      }
+
+      .theme-toggle .icon-sun {
+        display: none;
+      }
+
+      html[data-theme='dark'] .theme-toggle .icon-sun {
+        display: block;
+      }
+
+      html[data-theme='dark'] .theme-toggle .icon-moon {
+        display: none;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.03fr 1.34fr;
+        gap: 24px;
+        align-items: stretch;
+        padding: 10px 0 14px;
+      }
+
+      .hero-left {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      h1 {
+        font-size: clamp(4.1rem, 9vw, 7.4rem);
+        line-height: 0.86;
+        letter-spacing: -0.055em;
+        margin: 0;
+        font-weight: 700;
+        max-width: 7ch;
+      }
+
+      .hero-copy {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 1.45rem;
+        line-height: 1.16;
+        letter-spacing: 0.02em;
+        color: var(--ink-soft);
+        max-width: 34ch;
+      }
+
+      .timer {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 30px 28px;
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        min-height: 100%;
+      }
+
+      .timer-label {
+        font-family: 'Google Sans Code', 'IBM Plex Mono', monospace;
+        font-size: 0.82rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        color: var(--ink-soft);
+        text-wrap: balance;
+      }
+
+      .timer-value {
+        font-family: 'Instrument Serif', serif;
+        font-size: clamp(3.6rem, 6.8vw, 6.4rem);
+        line-height: 0.95;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+        white-space: nowrap;
+      }
+
+      .timer-value span {
+        display: inline-block;
+        min-width: 1.9ch;
+      }
+
+      .section {
+        padding: 12px 0 12px;
+        border-top: 1px solid var(--line);
+        overflow: visible;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .section-label {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.76rem;
+        letter-spacing: 0.18em;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .arrows {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .arrow-btn {
+        background: transparent;
+        border: none;
+        color: var(--ink);
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        padding: 0;
+      }
+
+      /* Hide the focus ring when clicking with mouse; show for keyboard navigation */
+      .arrow-btn:focus { outline: none; }
+      .arrow-btn:focus-visible { outline: 2px solid var(--line); outline-offset: 2px; }
+
+      .post-grid {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        align-items: stretch;
+        overflow-x: auto;
+        overflow-y: visible;
+        padding-inline: 18px;
+        padding-top: 18px;
+        scroll-behavior: smooth;
+        /* Give room for card shadows so they're not clipped by the scroller */
+        padding-bottom: 24px;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        -ms-overflow-style: none; /* IE/Edge */
+        scrollbar-width: none; /* Firefox */
+      }
+
+      .post-grid::-webkit-scrollbar { display: none; }
+
+      .post-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--surface);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        width: 360px;
+        flex: 0 0 360px;
+        box-sizing: border-box;
+        position: relative;
+        transition: transform 320ms cubic-bezier(.2,.9,.2,1), border-color 320ms ease, box-shadow 320ms ease;
+        transform-origin: center;
+        will-change: transform, border-color, box-shadow;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .post-card:hover,
+      .post-card:focus-within {
+        transform: translateY(-6px) scale(1.01);
+
+        box-shadow:
+          var(--shadow-elev-1),
+          var(--shadow-glow);
+
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      .post-card > * { position: relative; z-index: 2; }
+      .post-card-inner {
+        border-radius: 14px;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .post-card-inner > * { position: relative; z-index: 2; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .post-card,
+        .post-card:hover,
+        .post-card:focus-within {
+          transition: none !important;
+          transform: none !important;
+        }
+      }
+
+      .post-card-link {
+        display: block;
+        color: inherit;
+        height: 100%;
+      }
+
+      /* Fixed title area so featured and recent cards look identical */
+      .post-top {
+        padding: 16px 14px 14px;
+        background: var(--card-top);
+        color: var(--card-top-ink);
+        font-size: 2.4rem;
+        line-height: 0.95;
+        letter-spacing: -0.03em;
+        min-height: 150px;
+        display: flex;
+        align-items: flex-end;
+      }
+
+      .post-bottom {
+        padding: 10px 14px 12px;
+        flex: 1;
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        align-content: start;
+      }
+
+      .post-meta {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.56rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        margin-bottom: 8px;
+      }
+
+      .post-title {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+
+      .post-summary,
+      .post-time {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.74rem;
+        color: var(--ink-soft);
+      }
+
+      .newsletter {
+        padding: 14px 0 12px;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+      }
+
+      .newsletter h2 {
+        font-size: clamp(1.55rem, 2vw, 2.15rem);
+        line-height: 1.02;
+        letter-spacing: -0.055em;
+        margin: 0;
+        max-width: none;
+      }
+
+      .newsletter-form {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        background: var(--input-bg);
+        overflow: hidden;
+        width: 100%;
+        min-height: 56px;
+        flex: 0 0 auto;
+        justify-self: end;
+        padding: 4px;
+      }
+
+      .newsletter-form input {
+        flex: 1;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--ink);
+        font: inherit;
+        font-size: 0.95rem;
+        padding: 10px 18px;
+      }
+
+      .newsletter-form input::placeholder {
+        color: var(--ink-soft);
+        opacity: 0.75;
+      }
+
+      .newsletter-form button {
+        border: 0;
+        background: var(--send-bg);
+        color: var(--send-ink);
+        padding: 10px 18px;
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        min-width: 84px;
+        border-radius: 11px;
+      }
+
+      @media (max-width: 1140px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+
+        .post-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        h1 {
+          margin-bottom: 16px;
+        }
+      }
+
+      @media (max-width: 740px) {
+        main {
+          padding-inline: 14px;
+        }
+
+        .topbar {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .topbar-middle {
+          order: 3;
+          width: 100%;
+        }
+
+        .post-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .newsletter {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+
+        .newsletter h2 {
+          max-width: 100%;
+        }
+
+        .newsletter h2 {
+          font-size: clamp(1.55rem, 8vw, 2.1rem);
+        }
+
+        .timer-value {
+          font-size: clamp(3.2rem, 14vw, 5.6rem);
+        }
+
+        .theme-toggle {
+          width: 40px;
+          height: 40px;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="topbar" aria-label="Site top bar">
+        <div class="topbar-block">Debesh Biswas - The <em>B</em>log</div>
+        <div class="topbar-block topbar-middle">Artificial Intelligence / Machine Learning</div>
+        <nav class="topbar-block topbar-nav" aria-label="Primary">
+          <a href="/home/">Console</a>
+          <a href="/blog/">Disk</a>
+          <a href="/about">Root</a>
+          <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
+            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 13.2A9 9 0 1 1 10.8 3a7 7 0 0 0 10.2 10.2z"></path>
+            </svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path>
+            </svg>
+            <span class="visually-hidden">Toggle color theme</span>
+          </button>
+        </nav>
+      </header>
+
+      <section class="hero" aria-label="Hero">
+        <div class="hero-left">
+          <h1>Debesh's <span class="italic-b">B</span>log</h1>
+          <style>
+          .italic-b {
+            font-style: italic;
+            margin-right: 0.08em;
+            margin-left: -0.08em;
+          }
+          </style>
+          <p class="hero-copy">
+            A personal blog born from an obsession with documentation and a deep interest in machine
+            learning.
+          </p>
+        </div>
+
+        <aside class="timer" aria-label="Countdown panel">
+          <div class="timer-label">Time Until AI Takes Over The World and I Become a Farmer : </div>
+          <div class="timer-value" id="countdown" data-target={countdownTarget} aria-live="polite">
+            00d 00h 00m 00s
+          </div>
+        </aside>
+      </section>
+
+      <section class="section" aria-label="Featured posts">
+        <div class="section-header">
+          <div class="section-label">Featured</div>
+          <div class="arrows">
+            <button class="arrow-btn" data-direction="left" aria-label="Scroll left">←</button>
+            <button class="arrow-btn" data-direction="right" aria-label="Scroll right">→</button>
+          </div>
+        </div>
+        <div class="post-grid">
+          {featuredPosts.map((post) => (
+            <a class="post-card-link" href={post.href}>
+              <article class="post-card">
+                <div class="post-card-inner">
+                  <div class="post-top">{post.title}</div>
+                  <div class="post-bottom">
+                    <div class="post-meta">{post.tag}</div>
+                    <div class="post-summary">{post.summary}</div>
+                    <div class="post-time">{post.time}</div>
+                  </div>
+                </div>
+              </article>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="section" aria-label="Recent posts">
+        <div class="section-header">
+          <div class="section-label">Recent Posts</div>
+          <div class="arrows">
+            <button class="arrow-btn" data-direction="left" aria-label="Scroll left">←</button>
+            <button class="arrow-btn" data-direction="right" aria-label="Scroll right">→</button>
+          </div>
+        </div>
+        <div class="post-grid">
+          {recentPosts.map((post) => (
+            <a class="post-card-link" href={post.href}>
+              <article class="post-card">
+                <div class="post-card-inner">
+                  <div class="post-top">{post.title}</div>
+                  <div class="post-bottom">
+                    <div class="post-meta">{post.tag}</div>
+                    <div class="post-summary">{post.summary}</div>
+                    <div class="post-time">{post.time}</div>
+                  </div>
+                </div>
+              </article>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section class="newsletter" aria-label="Newsletter">
+        <h2>Sign up for a weekly bite of curiosity in your inbox!</h2>
+        <form class="newsletter-form" onsubmit="event.preventDefault()">
+          <input type="email" aria-label="Email" placeholder="Your email" />
+          <button type="submit">SEND</button>
+        </form>
+      </section>
+
+      <script is:inline>
+        const countdownElement = document.getElementById('countdown');
+
+        const formatCountdown = (targetDate) => {
+          const now = new Date();
+          const diff = Math.max(0, targetDate.getTime() - now.getTime());
+
+          const secondsTotal = Math.floor(diff / 1000);
+          const days = Math.floor(secondsTotal / 86400);
+          const hours = Math.floor((secondsTotal % 86400) / 3600);
+          const minutes = Math.floor((secondsTotal % 3600) / 60);
+          const seconds = secondsTotal % 60;
+
+          return {
+            days: String(days).padStart(2, '0'),
+            hours: String(hours).padStart(2, '0'),
+            minutes: String(minutes).padStart(2, '0'),
+            seconds: String(seconds).padStart(2, '0')
+          };
+        };
+
+        const renderCountdown = () => {
+          if (!countdownElement) return;
+
+          const target = new Date(countdownElement.dataset.target ?? '2042-01-01T00:00:00Z');
+          const value = formatCountdown(target);
+
+          countdownElement.innerHTML =
+            `<span>${value.days}d</span> <span>${value.hours}h</span> <span>${value.minutes}m</span> <span>${value.seconds}s</span>`;
+        };
+
+        renderCountdown();
+        window.setInterval(renderCountdown, 1000);
+
+        const themeToggle = document.getElementById('themeToggle');
+
+        const updateThemeToggleLabel = (activeTheme) => {
+          if (!(themeToggle instanceof HTMLButtonElement)) return;
+          themeToggle.setAttribute(
+            'aria-label',
+            activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+          );
+        };
+
+        themeToggle?.addEventListener('click', () => {
+          const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+          document.documentElement.dataset.theme = nextTheme;
+          localStorage.setItem('debesh-blog-theme', nextTheme);
+          updateThemeToggleLabel(nextTheme);
+        });
+
+        updateThemeToggleLabel(document.documentElement.dataset.theme ?? 'light');
+
+        // Scroll controls for post grids (left/right arrow buttons)
+        (function () {
+          const sections = document.querySelectorAll('.section');
+          sections.forEach((section) => {
+            const grid = section.querySelector('.post-grid');
+            if (!grid) return;
+
+            const leftBtn = section.querySelector('.arrow-btn[data-direction="left"]');
+            const rightBtn = section.querySelector('.arrow-btn[data-direction="right"]');
+
+            const getScrollAmount = () => Math.max(300, Math.floor(grid.clientWidth * 0.9));
+
+            const doScroll = (dir) => {
+              const amount = getScrollAmount();
+              grid.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
+            };
+
+            leftBtn?.addEventListener('click', () => doScroll('left'));
+            rightBtn?.addEventListener('click', () => doScroll('right'));
+          });
+        })();
+      </script>
+    </main>
+  </body>
+</html>

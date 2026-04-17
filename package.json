@@ -12,6 +12,12 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/mdx": "^5.0.3",
+    "@rehype-pretty/transformers": "^0.13.2",
     "astro": "^6.1.6"
+  },
+  "devDependencies": {
+    "rehype-pretty-code": "^0.14.3",
+    "shiki": "^4.0.2"
   }
 }
