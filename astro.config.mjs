@@ -1,12 +1,13 @@
 import mdx from '@astrojs/mdx';
+import netlify from '@astrojs/netlify';
+import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
 import { rehypePrettyCode } from 'rehype-pretty-code';
 import { transformerCopyButton } from '@rehype-pretty/transformers';
 
 export default defineConfig({
-  // GitHub Pages: set your site URL and repo base path
-  site: 'https://debesh-biswas.github.io',
-  base: '/Blog/',
+  site: 'https://YOUR-SITE.netlify.app', // ← update after Netlify gives you a URL
+  adapter: netlify(),
 
   markdown: {
     syntaxHighlight: false,
@@ -14,9 +15,7 @@ export default defineConfig({
       [
         rehypePrettyCode,
         {
-          // Softer GitHub dark and the standard GitHub light theme
           theme: { dark: 'github-dark-dimmed', light: 'github-light' },
-          // preserve theme background colors and enable grid styling
           keepBackground: true,
           grid: true,
           transformers: [
@@ -29,42 +28,5 @@ export default defineConfig({
       ],
     ],
   },
-  integrations: [mdx()],
+  integrations: [mdx(), sitemap()],
 });
-
-// import mdx from '@astrojs/mdx';
-// import { defineConfig } from 'astro/config';
-// import { rehypePrettyCode } from 'rehype-pretty-code';
-// import { transformerCopyButton } from '@rehype-pretty/transformers';
-
-// export default defineConfig({
-//   markdown: {
-//     syntaxHighlight: false,
-//     rehypePlugins: [
-//       [
-//         rehypePrettyCode,
-//         {
-//           // Softer GitHub dark and the standard GitHub light theme
-//           theme: { dark: 'github-dark-dimmed', light: 'github-light' },
-//           // preserve theme background colors and enable grid styling
-//           keepBackground: true,
-//           grid: true,
-//           transformers: [
-//             transformerCopyButton({
-//               visibility: 'hover',
-//               feedbackDuration: 2_500,
-//             }),
-//           ],
-//         },
-//       ],
-//     ],
-//   },
-//   integrations: [mdx()],
-// });
-
-// import { defineConfig } from 'astro/config';
-
-// export default defineConfig({
-//   site: 'https://debesh-biswas.github.io',
-//   base: '/Blog',   // <-- your repo name
-// });

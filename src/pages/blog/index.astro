@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const title = 'Blog';
 const description = 'Posts, notes, and experiments for Debesh Blog.';
@@ -17,406 +18,155 @@ const formatDate = (date: Date) =>
 
 const getPostSlug = (post: (typeof posts)[number]) =>
   post.slug ?? post.id.replace(/\.mdx$/i, '').replace(/\/index$/i, '');
+
 const postsByCategory = posts.reduce((acc, p) => {
-  const cat = (p.data.category ?? 'Uncategorized');
+  const cat = p.data.category ?? 'Uncategorized';
   if (!acc[cat]) acc[cat] = [];
   acc[cat].push(p);
   return acc;
 }, {} as Record<string, Array<(typeof posts)[number]>>);
 
 const categories = Object.keys(postsByCategory).sort((a, b) => a.localeCompare(b));
-
 ---
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="generator" content={Astro.generator} />
-    <meta name="description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
-    <script is:inline>
-      const storedTheme = localStorage.getItem('debesh-blog-theme');
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.dataset.theme = storedTheme ?? (systemPrefersDark ? 'dark' : 'light');
-    </script>
-    <title>{title} | Debesh Blog</title>
-    <style>
-      :root {
-        --bg: #f0ede8;
-        --surface: #e5e7ea;
-        --ink: #151112;
-        --ink-soft: #383336;
-        --line: #a7a2a5;
-        --card-top: linear-gradient(180deg, #2d2a2c 0%, #161417 100%);
-        --card-top-ink: #f2f2f2;
-        --input-bg: #e5e7ea;
-        --send-bg: #130f11;
-        --send-ink: #f6f4f2;
-      }
 
-      html[data-theme='dark'] {
-        color-scheme: dark;
-        --bg: #0d0d11;
-        --surface: #0f1116;
-        --ink: #f2f0ee;
-        --ink-soft: #d0ccd1;
-        --line: #565259;
-        --card-top: linear-gradient(180deg, #f0f0f0 0%, #d8dbe0 100%);
-        --card-top-ink: #191519;
-        --input-bg: #11131a;
-        --send-bg: #f0efec;
-        --send-ink: #171317;
-      }
+<BaseLayout title={`${title} | Debesh Blog`} description={description}>
+  <section aria-label="Blog listing">
+    <h1>Disk</h1>
+    <p class="lead">Browse posts grouped by category below.</p>
 
-      * { box-sizing: border-box; }
-      html, body { margin: 0; min-height: 100%; }
+    {categories.length === 0 ? (
+      <p>No posts available.</p>
+    ) : (
+      categories.map((cat) => (
+        <section class="category" aria-label={"Category: " + cat}>
+          <h2 class="section-label">{cat}</h2>
+          <ul class="post-list">
+            {postsByCategory[cat]
+              .slice()
+              .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+              .map((post) => (
+                <li>
+                  <a class="post-link" href={`${import.meta.env.BASE_URL}blog/${getPostSlug(post)}/`}>{post.data.title}</a>
+                  <span class="post-date">{post.data.pubDate ? formatDate(post.data.pubDate) : ''}</span>
+                </li>
+              ))}
+          </ul>
+        </section>
+      ))
+    )}
+  </section>
+</BaseLayout>
 
-      /* Hide native scrollbars but keep scrolling behavior */
-      html {
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none; /* IE 10+ */
-        scroll-behavior: smooth;
-      }
-      html::-webkit-scrollbar { width: 0; height: 0; }
-      body::-webkit-scrollbar { width: 0; height: 0; }
+<style>
+  h1 {
+    margin: 0 0 15px;
+    font-size: clamp(2.2rem, 4vw, 3.8rem);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+  }
 
-      body {
-        font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
-        background: var(--bg);
-        color: var(--ink);
-        line-height: 1.45;
-      }
+  .lead {
+    margin: 0 0 26px;
+    color: var(--muted);
+    max-width: 60ch;
+  }
 
-      main {
-        max-width: 1320px;
-        margin: 0 auto;
-        padding: 18px 28px 30px;
-      }
+  .post-list {
+    list-style: none;
+    margin: 0 0 20px 0;
+    padding: 0;
+  }
 
-      a { color: inherit; text-decoration: none; }
+  .post-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+  }
 
-       .topbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
-        padding: 10px 14px;
-        border: 1px solid var(--line);
-        margin-bottom: 18px;
-      }
+  .post-list li .post-link {
+    flex: 1 1 auto;
+    font-weight: 400;
+    color: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 140ms ease, font-weight 120ms ease, transform 120ms ease;
+  }
 
-      .topbar-block {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.72rem;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        font-weight: 600;
-        white-space: nowrap;
-      }
+  .post-list li:hover .post-link,
+  .post-list li .post-link:focus,
+  .post-list li .post-link:focus-visible {
+    font-weight: 600;
+    transform: translateY(-1px);
+    color: inherit;
+  }
 
-      .topbar-middle {
-        text-align: center;
-        flex: 1;
-      }
+  .post-list li .post-date {
+    flex: 0 0 auto;
+    margin-left: 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
 
-      .topbar-nav {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.2rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin: 8px 0 6px;
+  }
 
-      .theme-toggle {
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        background: transparent;
-        color: var(--ink);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        padding: 0;
-        cursor: pointer;
-      }
+  .category {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0;
+    margin-bottom: 6px;
+  }
 
-      .theme-toggle svg {
-        width: 18px;
-        height: 18px;
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 1.8;
-      }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
 
-      .theme-toggle .icon-sun {
-        display: none;
-      }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    padding: 16px;
+    min-height: 208px;
+    display: flex;
+    flex-direction: column;
+  }
 
-      html[data-theme='dark'] .theme-toggle .icon-sun {
-        display: block;
-      }
+  .meta {
+    display: inline-flex;
+    gap: 10px;
+    font-size: 0.72rem;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
 
-      html[data-theme='dark'] .theme-toggle .icon-moon {
-        display: none;
-      }
+  .card h2 {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+    line-height: 1.1;
+    min-height: 2.2em;
+  }
 
-      .visually-hidden {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-      }
+  .card p {
+    margin: 0;
+    color: var(--muted);
+    margin-top: auto;
+  }
 
-      .hero {
-        display: grid;
-        grid-template-columns: 1.03fr 1.34fr;
-        gap: 24px;
-        align-items: stretch;
-        padding: 10px 0 14px;
-      }
-
-      .hero-left {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-      }
-
-      h1 {
-        margin: 0 0 15px;
-        font-size: clamp(2.2rem, 4vw, 3.8rem);
-        line-height: 0.95;
-        letter-spacing: -0.04em;
-      }
-
-      .hero-copy {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 1.45rem;
-        line-height: 1.16;
-        letter-spacing: 0.02em;
-        color: var(--ink-soft);
-        max-width: 34ch;
-      }
-
-      .lead {
-        margin: 0 0 26px;
-        color: var(--muted);
-        max-width: 60ch;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .post-list {
-        list-style: none;
-        margin: 0 0 20px 0;
-        padding: 0;
-      }
-
-      .post-list li {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 10px 0;
-      }
-
-      .post-list li .post-link {
-        flex: 1 1 auto;
-        font-weight: 400;
-        color: inherit;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        transition: color 140ms ease, font-weight 120ms ease, transform 120ms ease;
-      }
-
-      /* Hover and keyboard focus: emphasize the title */
-      .post-list li:hover .post-link,
-      .post-list li .post-link:focus,
-      .post-list li .post-link:focus-visible {
-        font-weight: 600;
-        transform: translateY(-1px);
-        color: inherit;
-      }
-
-      .post-list li .post-date {
-        flex: 0 0 auto;
-        margin-left: 24px;
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.82rem;
-        color: var(--ink-soft);
-        white-space: nowrap;
-      }
-
-      .section-label {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 1.2rem;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        margin: 8px 0 6px;
-      }
-
-      .category {
-        border-bottom: 1px solid var(--line);
-        padding-bottom: 0;
-        margin-bottom: 6px;
-      }
-
-      .card {
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        background: var(--surface);
-        padding: 16px;
-        min-height: 208px;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .meta {
-        display: inline-flex;
-        gap: 10px;
-        font-size: 0.72rem;
-        font-family: 'IBM Plex Mono', monospace;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 8px;
-      }
-
-      .card h2 {
-        margin: 0 0 8px;
-        font-size: 1.2rem;
-        line-height: 1.1;
-        min-height: 2.2em;
-      }
-
-      .card p {
-        margin: 0;
-        color: var(--muted);
-        margin-top: auto;
-      }
-
-      @media (max-width: 760px) {
-        .grid { grid-template-columns: 1fr; }
-      }
-      @media (max-width: 1140px) {
-        .hero {
-          grid-template-columns: 1fr;
-        }
-      }
-      @media (max-width: 740px) {
-        main {
-          padding-inline: 14px;
-        }
-        .topbar {
-          flex-wrap: wrap;
-          justify-content: center;
-        }
-        .topbar-middle {
-          order: 3;
-          width: 100%;
-                }
-        .theme-toggle {
-          width: 40px;
-          height: 40px;
-          justify-content: center;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <header class="topbar" aria-label="Site top bar">
-        <div class="topbar-block">Debesh Biswas - The <em>B</em>log</div>
-        <div class="topbar-block topbar-middle">Artificial Intelligence / Machine Learning</div>
-        <nav class="topbar-block topbar-nav" aria-label="Primary">
-          <a href={`${import.meta.env.BASE_URL}`}>Console</a>
-          <a href={`${import.meta.env.BASE_URL}blog`}>Disk</a>
-          <a href={`${import.meta.env.BASE_URL}about`}>Root</a>
-          <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
-            <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M21 13.2A9 9 0 1 1 10.8 3a7 7 0 0 0 10.2 10.2z"></path>
-            </svg>
-            <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="4"></circle>
-              <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path>
-            </svg>
-            <span class="visually-hidden">Toggle color theme</span>
-          </button>
-        </nav>
-      </header>
-    <script is:inline>
-      (function () {
-        const ensureSetup = () => {
-          const themeToggle = document.getElementById('themeToggle');
-
-          const updateThemeToggleLabel = (activeTheme) => {
-            if (!(themeToggle instanceof HTMLButtonElement)) return;
-            themeToggle.setAttribute(
-              'aria-label',
-              activeTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-            );
-          };
-
-          themeToggle?.addEventListener('click', () => {
-            const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-            document.documentElement.dataset.theme = nextTheme;
-            localStorage.setItem('debesh-blog-theme', nextTheme);
-            updateThemeToggleLabel(nextTheme);
-          });
-
-          updateThemeToggleLabel(document.documentElement.dataset.theme ?? 'light');
-        };
-
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', ensureSetup);
-        } else {
-          ensureSetup();
-        }
-      })();
-    </script>
-
-      <section aria-label="Blog listing">
-        <h1>Disk</h1>
-        <p class="lead">Browse posts grouped by category below.</p>
-
-        {categories.length === 0 ? (
-          <p>No posts available.</p>
-        ) : (
-          categories.map((cat) => (
-            <section class="category" aria-label={"Category: " + cat}>
-              <h2 class="section-label">{cat}</h2>
-              <ul class="post-list">
-                {postsByCategory[cat]
-                  .slice()
-                  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-                  .map((post) => (
-                    <li>
-                      <a class="post-link"   href={`${import.meta.env.BASE_URL}blog/${getPostSlug(post)}/`}>{post.data.title}</a>
-                      <span class="post-date">{post.data.pubDate ? formatDate(post.data.pubDate) : ''}</span>
-                    </li>
-                  ))}
-              </ul>
-            </section>
-          ))
-        )}
-      </section>
-    </main>
-  </body>
-</html>
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>

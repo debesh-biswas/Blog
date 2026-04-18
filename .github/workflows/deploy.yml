@@ -1,40 +1,49 @@
-name: Deploy to GitHub Pages
+name: Notify subscribers on new post
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
-  build:
+  notify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect new blog post
+        id: new_post
+        run: |
+          NEW_FILE=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'src/content/blog/' | head -1)
+          if [ -n "$NEW_FILE" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            TITLE=$(grep -m1 '^title:' "$NEW_FILE" | sed "s/^title:[[:space:]]*['\"]//;s/['\"][[:space:]]*$//")
+            SLUG=$(echo "$NEW_FILE" | sed 's|src/content/blog/||;s|/index\.mdx$||;s|\.mdx$||')
+            echo "title=$TITLE" >> $GITHUB_OUTPUT
+            echo "slug=$SLUG" >> $GITHUB_OUTPUT
+            echo "New post detected: $TITLE (slug: $SLUG)"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No new blog post in this push."
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.new_post.outputs.found == 'true'
         with:
           node-version: 22.x
           cache: npm
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./dist
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - run: npm ci
+        if: steps.new_post.outputs.found == 'true'
+
+      - name: Send notification emails
+        if: steps.new_post.outputs.found == 'true'
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_AUDIENCE_ID: ${{ secrets.RESEND_AUDIENCE_ID }}
+          NEW_POST_TITLE: ${{ steps.new_post.outputs.title }}
+          NEW_POST_SLUG: ${{ steps.new_post.outputs.slug }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: node scripts/notify-subscribers.mjs
