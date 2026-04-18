@@ -6,7 +6,7 @@ import { rehypePrettyCode } from 'rehype-pretty-code';
 import { transformerCopyButton } from '@rehype-pretty/transformers';
 
 export default defineConfig({
-  site: 'https://YOUR-SITE.netlify.app', // ← update after Netlify gives you a URL
+  site: 'https://debesh-blog.netlify.app/', // ← update after Netlify gives you a URL
   adapter: netlify(),
 
   markdown: {
