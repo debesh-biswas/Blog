@@ -6,24 +6,104 @@ const description = 'About Debesh Blog and the ideas behind the site.';
 ---
 
 <BaseLayout title={`${title} | Debesh Blog`} description={description}>
-  <section>
-    <h1>Root</h1>
-    <p>
-      I'm a computer science grad from VIT now pursuing a Master's in Artificial Intelligence at Boston University,
-      and honestly, this field never stops surprising me, which is exactly why I'm hooked.
-    </p>
-    <p>
-      My interests live at the intersection of language, intelligence, and systems. I'm fascinated by how machines learn to understand context,
-      reason through ambiguity, and even generate creative output.
-      Large language models, multimodal AI, and agentic systems that can autonomously break down problems and act on them,
-      these are the spaces where I think the most interesting problems live.
-    </p>
-    <p>
-      When I'm not deep in research or building, I'm tinkering with electronics, something I've picked up recently, catching up on papers,
-      or having a genuinely interesting conversation about something I don't fully understand yet.
-      I'm always open to internships and love chatting about AI, ideas, or anything in between.
-    </p>
+  <section class="about-hero">
+    <img class="avatar" src="/avatar.jpg" alt="Debesh Biswas" />
+    <div class="bio">
+      <h1>Root</h1>
+      <p>
+        I'm a computer science grad from VIT now pursuing a Master's in Artificial Intelligence at Boston University,
+        and honestly, this field never stops surprising me, which is exactly why I'm hooked.
+      </p>
+      <p>
+        My interests live at the intersection of language, intelligence, and systems. I'm fascinated by how machines learn to understand context,
+        reason through ambiguity, and even generate creative output.
+        Large language models, multimodal AI, and agentic systems that can autonomously break down problems and act on them,
+        these are the spaces where I think the most interesting problems live.
+      </p>
+      <p>
+        When I'm not deep in research or building, I'm tinkering with electronics, something I've picked up recently, catching up on papers,
+        or having a genuinely interesting conversation about something I don't fully understand yet.
+        I'm always open to internships and love chatting about AI, ideas, or anything in between.
+      </p>
+      <p>
+        I have two publications, feel free to check them out!
+        <ul>
+          <li> <a href="https://ieeexplore.ieee.org/document/11306416" target="_blank" rel="noopener" class="inline-link">Securing User Authentication and Data with Advanced Cryptographic Techniques and Blockchain Mechanisms in a Fintech Application</a></li>
+          <li> <a href="https://ieeexplore.ieee.org/document/11026186" target="_blank" rel="noopener" class="inline-link">Optimizing DNA Cryptography: Using HPC Leveraging GPU and Parallel Processing</a></li>
+        </ul>
+      </p>
+      
+      <p>
+        Check out my <a href="https://www.linkedin.com/in/debesh0611/" target="_blank" rel="noopener" class="inline-link">LinkedIn</a> and my <a href="/Debesh_Resume_.pdf" target="_blank" rel="noopener" class="inline-link">Resume</a>!
+      </p>
+    </div>
   </section>
+
+  <section class="contact" aria-label="Contact">
+    <div class="contact-header">
+      <div class="section-label">Contact Me!</div>
+      <h2>Send me a message</h2>
+    </div>
+    <form class="contact-form" id="contactForm">
+      <div class="contact-field">
+        <input type="email" id="contactEmail" placeholder="Your email" required />
+      </div>
+      <div class="contact-field">
+        <input type="text" id="contactSubject" placeholder="Subject" required />
+      </div>
+      <div class="contact-field contact-field--area">
+        <textarea id="contactMessage" rows="5" placeholder="Your message" required></textarea>
+      </div>
+      <button type="submit" id="contactBtn">SEND</button>
+    </form>
+    <p class="contact-msg" id="contactMsg" aria-live="polite"></p>
+  </section>
+
+  <script is:inline>
+    (function () {
+      const form = document.getElementById('contactForm');
+      const emailInput = document.getElementById('contactEmail');
+      const subjectInput = document.getElementById('contactSubject');
+      const messageInput = document.getElementById('contactMessage');
+      const btn = document.getElementById('contactBtn');
+      const msg = document.getElementById('contactMsg');
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        btn.textContent = '...';
+        btn.disabled = true;
+        msg.textContent = '';
+
+        try {
+          const res = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              senderEmail: emailInput.value.trim(),
+              subject: subjectInput.value.trim(),
+              message: messageInput.value.trim(),
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            msg.textContent = "Message sent! I'll get back to you soon.";
+            msg.style.color = 'var(--ink)';
+            form.style.display = 'none';
+          } else {
+            msg.textContent = data.error ?? 'Something went wrong. Try again.';
+            msg.style.color = '#c0392b';
+            btn.textContent = 'SEND';
+            btn.disabled = false;
+          }
+        } catch {
+          msg.textContent = 'Network error. Please try again.';
+          msg.style.color = '#c0392b';
+          btn.textContent = 'SEND';
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
 </BaseLayout>
 
 <style>
@@ -32,5 +112,142 @@ const description = 'About Debesh Blog and the ideas behind the site.';
     font-size: clamp(2.2rem, 4vw, 3.8rem);
     line-height: 0.95;
     letter-spacing: -0.04em;
+  }
+
+  .about-hero {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 28px;
+    align-items: start;
+    padding: 10px 0 24px;
+  }
+
+  .avatar {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top center;
+    border: 1px solid var(--line);
+    flex-shrink: 0;
+    align-self: start;
+  }
+
+  .bio p {
+    margin: 0 0 12px;
+  }
+
+  .inline-link {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    color: var(--ink);
+  }
+
+  .inline-link:hover {
+    color: var(--ink-soft);
+  }
+
+  .contact {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 0 24px;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .contact-header h2 {
+    font-size: clamp(1.55rem, 2vw, 2.15rem);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    margin: 0 0 14px;
+  }
+
+  .contact-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    max-width: 680px;
+  }
+
+  .contact-field {
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: var(--input-bg);
+    overflow: hidden;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+  }
+
+  .contact-field input,
+  .contact-field textarea {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.95rem;
+    padding: 10px 14px;
+  }
+
+  .contact-field input::placeholder,
+  .contact-field textarea::placeholder {
+    color: var(--ink-soft);
+    opacity: 0.75;
+  }
+
+  .contact-field--area {
+    align-items: start;
+    min-height: 120px;
+  }
+
+  .contact-field--area textarea {
+    resize: vertical;
+  }
+
+  #contactBtn {
+    width: fit-content;
+    border: 0;
+    background: var(--send-bg);
+    color: var(--send-ink);
+    padding: 12px 28px;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 11px;
+    transition: opacity 150ms ease;
+  }
+
+  #contactBtn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .contact-msg {
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+  }
+
+  @media (max-width: 600px) {
+    .about-hero {
+      grid-template-columns: 1fr;
+    }
+    .avatar {
+      justify-self: center;
+    }
+    .contact-form {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

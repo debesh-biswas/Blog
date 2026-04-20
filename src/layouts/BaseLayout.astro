@@ -124,6 +124,11 @@ const { title, description } = Astro.props;
         justify-content: flex-end;
       }
 
+      .topbar-nav a {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
       .theme-toggle {
         border: 1px solid var(--line);
         border-radius: 999px;
@@ -162,11 +167,26 @@ const { title, description } = Astro.props;
         border: 0;
       }
 
+      .site-footer {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 32px;
+        padding: 0px 0 10px;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.1em;
+        color: var(--ink-soft);
+        opacity: 0.6;
+      }
+
       @media (max-width: 740px) {
         main { padding-inline: 14px; }
         .topbar { flex-wrap: wrap; justify-content: center; }
         .topbar-middle { order: 3; width: 100%; }
         .theme-toggle { width: 40px; height: 40px; justify-content: center; }
+        .site-footer { flex-direction: column; gap: 4px; }
       }
     </style>
   </head>
@@ -192,6 +212,10 @@ const { title, description } = Astro.props;
         </nav>
       </header>
       <slot />
+      <footer class="site-footer">
+        <span>© {new Date().getFullYear()} Debesh Biswas · All rights reserved</span>
+        <span>Maintained by Debesh Biswas</span>
+      </footer>
     </main>
     <script>
       import { initTheme } from '../scripts/theme.ts';
